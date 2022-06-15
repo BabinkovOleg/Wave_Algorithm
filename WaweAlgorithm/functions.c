@@ -85,10 +85,12 @@ void DrawField(Vector2 fieldSize, Vector2 screenSize, int** field) {
 					DrawRectangleRec(rec, GREEN);
 				if (field[i][j] == MAX_FIELD_SIZE * MAX_FIELD_SIZE)
 					DrawRectangleRec(rec, RED);
-				if (field[i][j] > 1 && field[i][j] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
-					DrawRectangleRec(rec, MAGENTA);
-					DrawText(TextFormat("%d", field[i][j]), rec.x, rec.y, 10, BLACK);
-				}
+				//if (field[i][j] > 1 && field[i][j] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+				//	DrawRectangleRec(rec, MAGENTA);
+				//	DrawText(TextFormat("%d", field[i][j] - 1), rec.x, rec.y, 10, BLACK);
+				//}
+				if (field[i][j] == -2)
+					DrawRectangleRec(rec, BLACK);
 			}
 		}
 	}
@@ -150,9 +152,6 @@ void ThirdStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isStar
 
 	for (int i = 0; i < fieldSize.x; ++i) {
 		for (int j = 0; j < fieldSize.y; ++j) {
-			if (field[i][j] == 0) {
-
-			}
 			Rectangle rec;
 			rec.x = screenSize.x / 20 + j * screenSize.x * 18 / 20 / fieldSize.y + 1;
 			rec.y = screenSize.y / 20 + i * screenSize.y * 18 / 20 / fieldSize.x + 1;
@@ -183,60 +182,73 @@ void ThirdStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isStar
 		}
 	}
 
-	DrawText("LMB/RMB to set/delete start/finish\nEnter to next step", screenSize.x / 20, screenSize.y, 20, RED);
+	DrawText("LMB/RMB to set/delete start/finish\nEnter to next step", (int)screenSize.x / 20, (int)screenSize.y, 20, RED);
 
 	if (IsKeyPressed(KEY_ENTER) && *isStartSet && *isFinishSet)
 		* isStartFinishSet = true;
 }
 
 void FourthStage(Vector2 fieldSize, Vector2 screenSize, int** field, Vector2 startPos, Vector2 finishPos) {
-	DrawField(fieldSize, screenSize, field);
-	WaveAlg(fieldSize, field, startPos, finishPos, startPos);
+	WaveAlg(fieldSize, screenSize, field, startPos, finishPos, startPos);
+	BackPath(fieldSize, screenSize, field, startPos, finishPos, finishPos);
 }
 
-void WaveAlg(Vector2 fieldSize, int** field, Vector2 startPos, Vector2 finishPos, Vector2 currentPos) {
+void WaveAlg(Vector2 fieldSize, Vector2 screenSize, int** field, Vector2 startPos, Vector2 finishPos, Vector2 currentPos) {
 	if (currentPos.x > 0)
 		if (field[(int)currentPos.x - 1][(int)currentPos.y] == 0 || field[(int)currentPos.x - 1][(int)currentPos.y] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x - 1][(int)currentPos.y] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
 			field[(int)currentPos.x - 1][(int)currentPos.y] = field[(int)currentPos.x][(int)currentPos.y] + 1;
-			WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x - 1, currentPos.y });
+			WaveAlg(fieldSize, screenSize, field, startPos, finishPos, (Vector2) { currentPos.x - 1, currentPos.y });
 		}
 
 	if (currentPos.y > 0)
 		if (field[(int)currentPos.x][(int)currentPos.y - 1] == 0 || field[(int)currentPos.x][(int)currentPos.y - 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x][(int)currentPos.y - 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
 			field[(int)currentPos.x][(int)currentPos.y - 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
-			WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x, currentPos.y - 1 });
+			WaveAlg(fieldSize, screenSize, field, startPos, finishPos, (Vector2) { currentPos.x, currentPos.y - 1 });
 		}
 
 	if (currentPos.x < fieldSize.x - 1)
 		if (field[(int)currentPos.x + 1][(int)currentPos.y] == 0 || field[(int)currentPos.x + 1][(int)currentPos.y] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x + 1][(int)currentPos.y] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
 			field[(int)currentPos.x + 1][(int)currentPos.y] = field[(int)currentPos.x][(int)currentPos.y] + 1;
-			WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x + 1, currentPos.y });
+			WaveAlg(fieldSize, screenSize, field, startPos, finishPos, (Vector2) { currentPos.x + 1, currentPos.y });
 		}
+
 	if (currentPos.y < fieldSize.y - 1)
 		if (field[(int)currentPos.x][(int)currentPos.y + 1] == 0 || field[(int)currentPos.x][(int)currentPos.y + 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x][(int)currentPos.y + 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
 			field[(int)currentPos.x][(int)currentPos.y + 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
-			WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x, currentPos.y + 1 });
+			WaveAlg(fieldSize, screenSize, field, startPos, finishPos, (Vector2) { currentPos.x, currentPos.y + 1 });
 		}
 }
 
+void BackPath(Vector2 fieldSize, Vector2 screenSize, int** field, Vector2 startPos, Vector2 finishPos, Vector2 currentPos) {
+	int min = MAX_FIELD_SIZE * MAX_FIELD_SIZE - 1;
+	if (currentPos.x > 0)
+		if (field[(int)currentPos.x - 1][(int)currentPos.y] < min && field[(int)currentPos.x - 1][(int)currentPos.y] > 0) min = field[(int)currentPos.x - 1][(int)currentPos.y];
+	if (currentPos.y > 0)
+		if (field[(int)currentPos.x][(int)currentPos.y - 1] < min && field[(int)currentPos.x][(int)currentPos.y - 1] > 0) min = field[(int)currentPos.x][(int)currentPos.y - 1];
+	if (currentPos.x < fieldSize.x - 1)
+		if (field[(int)currentPos.x + 1][(int)currentPos.y] < min && field[(int)currentPos.x + 1][(int)currentPos.y] > 0) min = field[(int)currentPos.x + 1][(int)currentPos.y];
+	if (currentPos.y < fieldSize.y - 1)
+		if (field[(int)currentPos.x][(int)currentPos.y + 1] < min && field[(int)currentPos.x][(int)currentPos.y + 1] > 0) min = field[(int)currentPos.x][(int)currentPos.y + 1];
 
-	//if (field[(int)currentPos.x][(int)currentPos.y - 1] == 0 || currentPos.y > 0 && field[(int)currentPos.x][(int)currentPos.y - 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x][(int)currentPos.y - 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
-	//	field[(int)currentPos.x][(int)currentPos.y - 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
-	//	WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x, currentPos.y - 1 });
-	//}
-	//if (field[(int)currentPos.x - 1][(int)currentPos.y - 1] == 0 || currentPos.x > 0 && currentPos.y > 0 && field[(int)currentPos.x - 1][(int)currentPos.y - 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x - 1][(int)currentPos.y - 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
-	//	field[(int)currentPos.x - 1][(int)currentPos.y - 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
-	//	WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x - 1, currentPos.y - 1 });
-	//}
-	//if (field[(int)currentPos.x + 1][(int)currentPos.y + 1] == 0 || currentPos.x < fieldSize.x - 1 && currentPos.y < fieldSize.y - 1 && field[(int)currentPos.x + 1][(int)currentPos.y + 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x + 1][(int)currentPos.y + 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
-	//	field[(int)currentPos.x + 1][(int)currentPos.y + 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
-	//	WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x + 1, currentPos.y + 1 });
-	//}
-	//if (field[(int)currentPos.x + 1][(int)currentPos.y - 1] == 0 || currentPos.x < fieldSize.x - 1 && currentPos.y > 0 && field[(int)currentPos.x + 1][(int)currentPos.y - 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x + 1][(int)currentPos.y - 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
-	//	field[(int)currentPos.x + 1][(int)currentPos.y - 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
-	//	WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x + 1, currentPos.y - 1 });
-	//}
-	//if (field[(int)currentPos.x - 1][(int)currentPos.y + 1] == 0 || currentPos.x > 0 && currentPos.y < fieldSize.y - 1 && field[(int)currentPos.x - 1][(int)currentPos.y + 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x - 1][(int)currentPos.y + 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
-	//	field[(int)currentPos.x - 1][(int)currentPos.y + 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
-	//	WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x - 1, currentPos.y + 1 });
-	//}
+	if (min > 1) {
+		if (currentPos.x > 0 && field[(int)currentPos.x - 1][(int)currentPos.y] == min) {
+			field[(int)currentPos.x - 1][(int)currentPos.y] = -2;
+			BackPath(fieldSize, screenSize, field, startPos, finishPos, (Vector2) { currentPos.x - 1, currentPos.y });
+		}
+		else
+			if (currentPos.y > 0 && field[(int)currentPos.x][(int)currentPos.y - 1] == min) {
+				field[(int)currentPos.x][(int)currentPos.y - 1] = -2;
+				BackPath(fieldSize, screenSize, field, startPos, finishPos, (Vector2) { currentPos.x, currentPos.y - 1 });
+			}
+			else
+				if (currentPos.x < fieldSize.x - 1 && field[(int)currentPos.x + 1][(int)currentPos.y] == min) {
+					field[(int)currentPos.x + 1][(int)currentPos.y] = -2;
+					BackPath(fieldSize, screenSize, field, startPos, finishPos, (Vector2) { currentPos.x + 1, currentPos.y });
+				}
+				else
+					if (currentPos.y < fieldSize.y - 1 && field[(int)currentPos.x][(int)currentPos.y + 1] == min) {
+						field[(int)currentPos.x][(int)currentPos.y + 1] = -2;
+						BackPath(fieldSize, screenSize, field, startPos, finishPos, (Vector2) { currentPos.x, currentPos.y + 1 });
+					}
+	}
+}

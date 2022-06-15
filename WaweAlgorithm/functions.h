@@ -36,4 +36,6 @@ void ThirdStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isStar
 
 void FourthStage(Vector2 fieldSize, Vector2 screenSize, int** field, Vector2 startPos, Vector2 finishPos);
 
-void WaveAlg(Vector2 fieldSize, int** field, Vector2 startPos, Vector2 finishPos, Vector2 currentPos);
+void WaveAlg(Vector2 fieldSize, Vector2 screenSize, int** field, Vector2 startPos, Vector2 finishPos, Vector2 currentPos);
+
+void BackPath(Vector2 fieldSize, Vector2 screenSize, int** field, Vector2 startPos, Vector2 finishPos, Vector2 currentPos);

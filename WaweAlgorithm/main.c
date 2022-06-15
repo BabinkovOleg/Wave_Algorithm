@@ -23,6 +23,7 @@ int main(void)
 	line2.boxSize = (Vector2) { screenSize.x / 3, screenSize.y / 10 };
 	Vector2 fieldSize = { -1, -1 };
 
+
 	Vector2 startPos, finishPos;
 
 	int** field = (int**)malloc(sizeof(int*) * MAX_FIELD_SIZE);
@@ -44,7 +45,7 @@ int main(void)
 	bool isStartFinishSet = false;
 	bool isPathFound = false;
 
-	InitWindow(screenSize.x, screenSize.y * 1.15, "Wave algorithm");
+	InitWindow((int)screenSize.x, (int)(screenSize.y * 1.15), "Wave algorithm");
 
 	SetTargetFPS(60);
 
@@ -70,6 +71,23 @@ int main(void)
 					}
 					else {
 						DrawField(fieldSize, screenSize, field);
+						DrawText("Press R to restart", screenSize.x / 20, screenSize.y, 20, RED);
+						if (IsKeyPressed(KEY_R)) {
+							getCorrectSize = false;
+							isWallsSet = false;
+							isStartSet = false;
+							isFinishSet = false;
+							isStartFinishSet = false;
+							isPathFound = false;
+							startPos = (Vector2) { 0, 0 };
+							finishPos = (Vector2) { 0, 0 };
+							fieldSize = (Vector2) { -1, -1 };
+							for (int i = 0; i < MAX_FIELD_SIZE; ++i) {
+								for (int j = 0; j < MAX_FIELD_SIZE; ++j) {
+									field[i][j] = 0;
+								}
+							}
+						}
 					}
 				}
 			}
