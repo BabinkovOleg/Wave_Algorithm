@@ -32,6 +32,8 @@ void FirstStage(line* line1, line* line2, Vector2* fieldSize, Vector2 screenSize
 
 void SecondStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isWallsSet);
 
-void ThirdStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isStartSet, bool* isFinishSet, bool* isStartFinishSet);
+void ThirdStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isStartSet, bool* isFinishSet, bool* isStartFinishSet, Vector2* starPos, Vector2* finishPos);
 
-void FourthStage(Vector2 fieldSize, Vector2 screenSize, int** field);
+void FourthStage(Vector2 fieldSize, Vector2 screenSize, int** field, Vector2 startPos, Vector2 finishPos);
+
+void WaveAlg(Vector2 fieldSize, int** field, Vector2 startPos, Vector2 finishPos, Vector2 currentPos);

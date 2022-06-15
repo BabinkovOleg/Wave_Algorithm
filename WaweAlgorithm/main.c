@@ -23,6 +23,8 @@ int main(void)
 	line2.boxSize = (Vector2) { screenSize.x / 3, screenSize.y / 10 };
 	Vector2 fieldSize = { -1, -1 };
 
+	Vector2 startPos, finishPos;
+
 	int** field = (int**)malloc(sizeof(int*) * MAX_FIELD_SIZE);
 	for (int i = 0; i < MAX_FIELD_SIZE; ++i)
 		field[i] = (int*)malloc(sizeof(int) * MAX_FIELD_SIZE);
@@ -40,6 +42,7 @@ int main(void)
 	bool isStartSet = false;
 	bool isFinishSet = false;
 	bool isStartFinishSet = false;
+	bool isPathFound = false;
 
 	InitWindow(screenSize.x, screenSize.y * 1.15, "Wave algorithm");
 
@@ -59,9 +62,15 @@ int main(void)
 				SecondStage(fieldSize, screenSize, field, &isWallsSet);
 			else {
 				if(!isStartFinishSet)
-					ThirdStage(fieldSize, screenSize, field, &isStartSet, &isFinishSet, &isStartFinishSet);
+					ThirdStage(fieldSize, screenSize, field, &isStartSet, &isFinishSet, &isStartFinishSet, &startPos, &finishPos);
 				else {
-					FourthStage(fieldSize, screenSize, field);
+					if (!isPathFound) {
+						FourthStage(fieldSize, screenSize, field, startPos, finishPos);
+						isPathFound = true;
+					}
+					else {
+						DrawField(fieldSize, screenSize, field);
+					}
 				}
 			}
 		}

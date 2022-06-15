@@ -18,7 +18,7 @@ void DrawTextLine(line* _line) {
 	if (_line->isActive) {
 		str = TextFormat("%s_", _line->currentStr);
 	}
-	DrawText(str, _line->position.x + 5, _line->position.y, _line->fontSize, _line->textColor);
+	DrawText(str, _line->position.x + 5, _line->position.y + (_line->boxSize.y - _line->fontSize) / 2, _line->fontSize, _line->textColor);
 }
 
 void InputText(line* _line) {
@@ -73,18 +73,22 @@ void DrawField(Vector2 fieldSize, Vector2 screenSize, int** field) {
 
 	for (int i = 0; i < fieldSize.x; ++i) {
 		for (int j = 0; j < fieldSize.y; ++j) {
+			Rectangle rec;
+			rec.x = screenSize.x / 20 + j * screenSize.x * 18 / 20 / fieldSize.y + 1;
+			rec.y = screenSize.y / 20 + i * screenSize.y * 18 / 20 / fieldSize.x + 1;
+			rec.width = screenSize.x * 18 / 20 / fieldSize.y - 2;
+			rec.height = screenSize.y * 18 / 20 / fieldSize.x - 2;
 			if (field[i][j] != 0) {
-				Rectangle rec;
-				rec.x = screenSize.x / 20 + j * screenSize.x * 18 / 20 / fieldSize.y + 1;
-				rec.y = screenSize.y / 20 + i * screenSize.y * 18 / 20 / fieldSize.x + 1;
-				rec.width = screenSize.x * 18 / 20 / fieldSize.y - 2;
-				rec.height = screenSize.y * 18 / 20 / fieldSize.x - 2;
 				if(field[i][j] == -1)
 					DrawRectangleRec(rec, BROWN);
-				if (field[i][j] == -2)
+				if (field[i][j] == 1)
 					DrawRectangleRec(rec, GREEN);
-				if (field[i][j] == -3)
+				if (field[i][j] == MAX_FIELD_SIZE * MAX_FIELD_SIZE)
 					DrawRectangleRec(rec, RED);
+				if (field[i][j] > 1 && field[i][j] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+					DrawRectangleRec(rec, MAGENTA);
+					DrawText(TextFormat("%d", field[i][j]), rec.x, rec.y, 10, BLACK);
+				}
 			}
 		}
 	}
@@ -115,7 +119,7 @@ void FirstStage(line* line1, line* line2, Vector2* fieldSize, Vector2 screenSize
 	DrawText("Number of rows:", screenSize.x / 20, screenSize.y * 3 / 40, 27, DARKGRAY);
 	DrawText("Number of columns:", screenSize.x / 20, screenSize.y * 9 / 40, 27, DARKGRAY);
 
-	DrawText("LMB on field to enter value (2; 20)\n\nEnter to next step", screenSize.x / 20, screenSize.y * 3 / 4, 25, RED);
+	DrawText("LMB on field to enter value [2 ; 20]\n\nEnter to next step", screenSize.x / 20, screenSize.y * 3 / 4, 25, RED);
 }
 
 void SecondStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isWallsSet) {
@@ -141,7 +145,7 @@ void SecondStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isWal
 	DrawText("RMB to delete walls", screenSize.x / 2, screenSize.y, 20, RED);
 }
 
-void ThirdStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isStartSet, bool* isFinishSet, bool* isStartFinishSet) {
+void ThirdStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isStartSet, bool* isFinishSet, bool* isStartFinishSet, Vector2* starPos, Vector2* finishPos) {
 	DrawField(fieldSize, screenSize, field);
 
 	for (int i = 0; i < fieldSize.x; ++i) {
@@ -156,20 +160,22 @@ void ThirdStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isStar
 			rec.height = screenSize.y * 18 / 20 / fieldSize.x - 2;
 			if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), rec) && field[i][j] == 0) {
 				if (!*isFinishSet && *isStartSet) {
-					field[i][j] = -3;
+					field[i][j] = MAX_FIELD_SIZE * MAX_FIELD_SIZE;
 					*isFinishSet = true;
+					*finishPos = (Vector2) { i, j };
 				}
 				if (!*isStartSet) {
-					field[i][j] = -2;
+					field[i][j] = 1;
 					*isStartSet = true;
+					*starPos = (Vector2) { i, j };
 				}
 			}
 			if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), rec)) {
-				if (field[i][j] == -2) {
+				if (field[i][j] == 1) {
 					field[i][j] = 0;
 					*isStartSet = false;
 				}
-				if (field[i][j] == -3) {
+				if (field[i][j] == MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
 					field[i][j] = 0;
 					*isFinishSet = false;
 				}
@@ -183,6 +189,54 @@ void ThirdStage(Vector2 fieldSize, Vector2 screenSize, int** field, bool* isStar
 		* isStartFinishSet = true;
 }
 
-void FourthStage(Vector2 fieldSize, Vector2 screenSize, int** field) {
+void FourthStage(Vector2 fieldSize, Vector2 screenSize, int** field, Vector2 startPos, Vector2 finishPos) {
 	DrawField(fieldSize, screenSize, field);
+	WaveAlg(fieldSize, field, startPos, finishPos, startPos);
 }
+
+void WaveAlg(Vector2 fieldSize, int** field, Vector2 startPos, Vector2 finishPos, Vector2 currentPos) {
+	if (currentPos.x > 0)
+		if (field[(int)currentPos.x - 1][(int)currentPos.y] == 0 || field[(int)currentPos.x - 1][(int)currentPos.y] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x - 1][(int)currentPos.y] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+			field[(int)currentPos.x - 1][(int)currentPos.y] = field[(int)currentPos.x][(int)currentPos.y] + 1;
+			WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x - 1, currentPos.y });
+		}
+
+	if (currentPos.y > 0)
+		if (field[(int)currentPos.x][(int)currentPos.y - 1] == 0 || field[(int)currentPos.x][(int)currentPos.y - 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x][(int)currentPos.y - 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+			field[(int)currentPos.x][(int)currentPos.y - 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
+			WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x, currentPos.y - 1 });
+		}
+
+	if (currentPos.x < fieldSize.x - 1)
+		if (field[(int)currentPos.x + 1][(int)currentPos.y] == 0 || field[(int)currentPos.x + 1][(int)currentPos.y] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x + 1][(int)currentPos.y] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+			field[(int)currentPos.x + 1][(int)currentPos.y] = field[(int)currentPos.x][(int)currentPos.y] + 1;
+			WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x + 1, currentPos.y });
+		}
+	if (currentPos.y < fieldSize.y - 1)
+		if (field[(int)currentPos.x][(int)currentPos.y + 1] == 0 || field[(int)currentPos.x][(int)currentPos.y + 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x][(int)currentPos.y + 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+			field[(int)currentPos.x][(int)currentPos.y + 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
+			WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x, currentPos.y + 1 });
+		}
+}
+
+
+	//if (field[(int)currentPos.x][(int)currentPos.y - 1] == 0 || currentPos.y > 0 && field[(int)currentPos.x][(int)currentPos.y - 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x][(int)currentPos.y - 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+	//	field[(int)currentPos.x][(int)currentPos.y - 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
+	//	WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x, currentPos.y - 1 });
+	//}
+	//if (field[(int)currentPos.x - 1][(int)currentPos.y - 1] == 0 || currentPos.x > 0 && currentPos.y > 0 && field[(int)currentPos.x - 1][(int)currentPos.y - 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x - 1][(int)currentPos.y - 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+	//	field[(int)currentPos.x - 1][(int)currentPos.y - 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
+	//	WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x - 1, currentPos.y - 1 });
+	//}
+	//if (field[(int)currentPos.x + 1][(int)currentPos.y + 1] == 0 || currentPos.x < fieldSize.x - 1 && currentPos.y < fieldSize.y - 1 && field[(int)currentPos.x + 1][(int)currentPos.y + 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x + 1][(int)currentPos.y + 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+	//	field[(int)currentPos.x + 1][(int)currentPos.y + 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
+	//	WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x + 1, currentPos.y + 1 });
+	//}
+	//if (field[(int)currentPos.x + 1][(int)currentPos.y - 1] == 0 || currentPos.x < fieldSize.x - 1 && currentPos.y > 0 && field[(int)currentPos.x + 1][(int)currentPos.y - 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x + 1][(int)currentPos.y - 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+	//	field[(int)currentPos.x + 1][(int)currentPos.y - 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
+	//	WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x + 1, currentPos.y - 1 });
+	//}
+	//if (field[(int)currentPos.x - 1][(int)currentPos.y + 1] == 0 || currentPos.x > 0 && currentPos.y < fieldSize.y - 1 && field[(int)currentPos.x - 1][(int)currentPos.y + 1] - 1 > field[(int)currentPos.x][(int)currentPos.y] && field[(int)currentPos.x - 1][(int)currentPos.y + 1] < MAX_FIELD_SIZE * MAX_FIELD_SIZE) {
+	//	field[(int)currentPos.x - 1][(int)currentPos.y + 1] = field[(int)currentPos.x][(int)currentPos.y] + 1;
+	//	WaveAlg(fieldSize, field, startPos, finishPos, (Vector2) { currentPos.x - 1, currentPos.y + 1 });
+	//}
